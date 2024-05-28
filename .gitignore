@@ -9,4 +9,4 @@ raw_data/
 .envrc
 .python-version
 .env.yaml
-.ipynb
+#.ipynb
