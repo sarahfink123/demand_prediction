@@ -1,0 +1,12 @@
+pytest
+pylint
+ipdb
+jupyterlab
+numpy
+pandas
+matplotlib
+seaborn
+fastapi
+uvicorn
+scikit-learn
+colorama
