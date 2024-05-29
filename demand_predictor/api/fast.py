@@ -2,7 +2,7 @@ import pandas as pd
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from demand_predictor.ml_logic.registry import load_model  # Correct import for load_model
-from demand_predictor.ml_logic.preprocessor import preprocess_features  # Correct import for preprocess_features
+# from demand_predictor.ml_logic.preprocessor import preprocess_features  # Correct import for preprocess_features
 
 app = FastAPI()
 app.state.model = load_model()
