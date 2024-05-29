@@ -1,8 +1,8 @@
 import pandas as pd
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from demand_predictor.ml_logic.registry import load_model
-from demand_predictor.ml_logic.preprocessor import preprocess_features
+from demand_predictor.ml_logic.registry import load_model  # Correct import for load_model
+from demand_predictor.ml_logic.preprocessor import preprocess_features  # Correct import for preprocess_features
 
 app = FastAPI()
 app.state.model = load_model()
@@ -35,10 +35,10 @@ def predict(
         feature5=[feature5]
     ))
 
-    df_processed = preprocess_features(df)
-
-    y_pred = app.state.model.predict(df_processed)
-    return {"prediction": float(y_pred)}
+    # df_processed = preprocess_features(df)
+    # y_pred = app.state.model.predict(df_processed)
+    y_pred = 1
+    return {"prediction": int(y_pred)}
 
 @app.get("/")
 def root():
