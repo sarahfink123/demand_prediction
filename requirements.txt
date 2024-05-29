@@ -10,3 +10,4 @@ fastapi
 uvicorn
 scikit-learn
 colorama
+catboost
