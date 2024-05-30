@@ -2,7 +2,7 @@ import pandas as pd
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from demand_predictor.ml_logic.registry import load_model  # Correct import for load_model
-# from demand_predictor.ml_logic.preprocessor import preprocess_features  # Correct import for preprocess_features
+from demand_predictor.ml_logic.preprocessor import preprocess_features  # Correct import for preprocess_features
 
 app = FastAPI()
 app.state.model = load_model()
@@ -15,29 +15,28 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
-
+#'country', 'FUEL_PRCS', 'lead_time', 'adr', "arrival_date_month", 'stays_in_week_nights', 'INFLATION'
 @app.get("/predict")
 def predict(
         feature1: float,
         feature2: float,
         feature3: float,
         feature4: float,
-        feature5: float
+        feature5: float,
+        feature6: float,
+        feature7: float
     ):
     """
     Predict demand based on input features.
     """
-    df = pd.DataFrame(dict(
-        feature1=[feature1],
-        feature2=[feature2],
-        feature3=[feature3],
-        feature4=[feature4],
-        feature5=[feature5]
-    ))
+    X_pred = pd.DataFrame(locals(), index=[0])
 
-    # df_processed = preprocess_features(df)
-    # y_pred = app.state.model.predict(df_processed)
-    y_pred = 1
+    model = app.state.model
+    assert model is not None
+
+    X_processed = preprocess_features(X_pred)
+    y_pred = model.predict(X_processed)
+
     return {"prediction": int(y_pred)}
 
 @app.get("/")
