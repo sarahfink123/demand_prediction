@@ -89,19 +89,6 @@ df_encoded = pd.concat([df.reset_index(drop=True), encoded_df.reset_index(drop=T
 
 # Drop the original columns that were encoded
 df_encoded.drop(columns=columns_to_encode, inplace=True)
-#---------------------------------------------------------------------------------------------------------------
-#Define binary
-def find_binary_columns(df):
-    binary_columns = []
-    for col in df.columns:
-        unique_values = df[col].unique()
-        if len(unique_values) == 2:
-            binary_columns.append(col)
-    return binary_columns
-df_binary = find_binary_columns(df_encoded)
-
-#to be scaled data
-df_to_scale_list = df_encoded.drop(columns=df_binary).columns.tolist()
 ############################SCALING##################################################################
 # Robust Scaler
 from sklearn.preprocessing import RobustScaler
@@ -162,10 +149,31 @@ params = {
 }
 
 ##################SAVING################################################################################################
-from demand_predictor.ml_logic.registry import save_model, save_results
+from demand_predictor.ml_logic.registry import save_model, save_results, load_model
 
 # Save the model
 save_model(model)
 
 # Save the metrics
 save_results(params=params, metrics=metrics)
+
+###############LOADING MODEL############################################################################################
+# Test loading the model
+loaded_model = load_model()
+
+# Check if the loaded model is the same as the saved model
+if loaded_model:
+    print("Model loaded successfully!")
+    sample_data = X_test.iloc[0:1]  # Take a single sample for prediction
+    print(sample_data)
+    loaded_model_prediction = loaded_model.predict(sample_data)
+    print("Loaded model prediction:", loaded_model_prediction)
+
+    # Take another sample for prediction
+    another_sample = X_test.iloc[1:2]  # Change the index as needed to select a different sample
+
+    # Make a prediction using the loaded model
+    another_loaded_model_prediction = loaded_model.predict(another_sample)
+    print("Another loaded model prediction:", another_loaded_model_prediction)
+else:
+    print("Failed to load the model.")
