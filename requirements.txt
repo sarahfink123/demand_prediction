@@ -11,4 +11,3 @@ uvicorn
 scikit-learn
 colorama
 catboost
-streamlit
