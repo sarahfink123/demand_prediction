@@ -21,10 +21,10 @@ def predict(
         lead_time: int,
         arrival_date_month: str,
         stays_in_week_nights: int,
-        country: str,
         adr: float,
-        INFLATION: float,
-        FUEL_PRCS: float
+        FUEL_PRCS: float,
+        country: str,
+        INFLATION: float
     ):
 
     # ['lead_time', 'arrival_date_month','stays_in_week_nights', 'adr', 'FUEL_PRCS']
@@ -40,11 +40,7 @@ def predict(
     X_processed = preprocess_is_canceled_X_pred(X_pred)
     y_pred = model.predict(X_processed)
 
-    probabilities = model.predict_proba(X_pred)
-    proba = probabilities[0][1]
-
-    return {"prediction": int(y_pred),
-            "prediction probability": float(proba)}
+    return {"prediction": int(y_pred)}
 
 @app.get("/")
 def root():
