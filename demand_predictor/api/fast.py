@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from demand_predictor.ml_logic.registry import load_model  # Correct import for load_model
@@ -49,3 +50,8 @@ def predict(
 @app.get("/")
 def root():
     return {'message': 'Welcome to the Demand Predictor API'}
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8080))
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=port)
