@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, RobustScaler, MinMaxScaler
 import joblib
-from demand_predictor.ml_logic.registry import load_model
+from registry import load_model
 
 def preprocess_features(df: pd.DataFrame) -> pd.DataFrame:
     ########################CLEANING DATA#########################################################################
@@ -146,7 +146,6 @@ def  preprocess_is_canceled_X_pred(df: pd.DataFrame) -> pd.DataFrame:
     # ['country',  'INFLATION']
     #######ENCODING########################################################################################
     # Encode country
-    #ONE HOT ENCODE
     country_mapping = {'ABW': 0, 'AGO': 1, 'AIA': 2, 'ALB': 3, 'AND': 4, 'ARE': 5, 'ARG': 6, 'ARM': 7, 'ASM': 8,\
         'ATA': 9, 'ATF': 10, 'AUS': 11, 'AUT': 12, 'AZE': 13, 'BDI': 14, 'BEL': 15, 'BEN': 16, 'BFA': 17, 'BGD': 18,\
         'BGR': 19, 'BHR': 20, 'BHS': 21, 'BIH': 22, 'BLR': 23, 'BOL': 24, 'BRA': 25, 'BRB': 26, 'BWA': 27, 'CAF': 28,\
@@ -201,26 +200,19 @@ def  preprocess_is_canceled_X_pred(df: pd.DataFrame) -> pd.DataFrame:
 
     return X_processed
 
-"""
-Index(['lead_time', 'arrival_date_month', 'stays_in_week_nights', 'country',
-       'adr', 'INFLATION', 'FUEL_PRCS'],
-      dtype='object')
-"""
-
-
-# data_frame = pd.DataFrame(
-#         {
-#     'lead_time': 342,
-#     'arrival_date_month': 'July',
-#     'stays_in_week_nights': 0,
-#     'country': 'PRT',
-#     'adr': 0,
-#     'INFLATION': 1.8,
-#     'FUEL_PRCS': 194
-#         }, index=[0])
-# name = preprocess_is_canceled_X_pred(
-#     data_frame)
-# model = load_model()
-# print(model.predict(name))
+data_frame = pd.DataFrame(
+        {
+    'lead_time': 342,
+    'arrival_date_month': 'July',
+    'stays_in_week_nights': 0,
+    'adr': 0,
+    'FUEL_PRCS': 194,
+    'country': 'PRT',
+    'INFLATION': 1.8
+        }, index=[0])
+name = preprocess_is_canceled_X_pred(
+    data_frame)
+model = load_model()
+print(model.predict(name))
 # print(name)
 # # print(data_frame)
