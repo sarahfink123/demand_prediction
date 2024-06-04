@@ -6,7 +6,7 @@ from demand_predictor.ml_logic.registry import load_model  # Correct import for 
 from demand_predictor.ml_logic.preprocessor import preprocess_is_canceled_X_pred  # Correct import for preprocess_features
 
 app = FastAPI()
-app.state.model = load_model()
+app.state.model = load_model('is_canceled')
 
 # Allowing all middleware is optional, but good practice for dev purposes
 app.add_middleware(
@@ -20,16 +20,13 @@ app.add_middleware(
 @app.get("/predict")
 def predict(
         lead_time: int,
-        arrival_date_month: str,
-        stays_in_week_nights: int,
-        country: str,
         adr: float,
         INFLATION: float,
-        FUEL_PRCS: float
+        FUEL_PRCS: float,
+        total_stay: int,
+        country: str,
+        arrival_date_month: str
     ):
-
-    # ['lead_time', 'arrival_date_month','stays_in_week_nights', 'adr', 'FUEL_PRCS']
-    # ['country',  'INFLATION']
     """
     Predict demand based on input features.
     """
@@ -39,9 +36,10 @@ def predict(
     assert model is not None
 
     X_processed = preprocess_is_canceled_X_pred(X_pred)
+
     y_pred = model.predict(X_processed)
 
-    probabilities = model.predict_proba(X_pred)
+    probabilities = model.predict_proba(X_processed)
     proba = probabilities[0][1]
 
     return {"prediction": int(y_pred),

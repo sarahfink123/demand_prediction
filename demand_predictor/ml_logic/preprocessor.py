@@ -1,8 +1,13 @@
 import pandas as pd
+import numpy as np
 import os
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, RobustScaler, MinMaxScaler
 import joblib
-from demand_predictor.ml_logic.registry import load_model
+
+def encode_time(data, col, max_val):
+    data[col + '_sin'] = np.sin(2 * np.pi * data[col] / max_val)
+    data[col + '_cos'] = np.cos(2 * np.pi * data[col] / max_val)
+    return data
 
 def preprocess_features(df: pd.DataFrame) -> pd.DataFrame:
     ########################CLEANING DATA#########################################################################
@@ -70,105 +75,104 @@ def preprocess_features(df: pd.DataFrame) -> pd.DataFrame:
     return df_encoded
 
 def preprocess_is_canceled(df: pd.DataFrame) -> pd.DataFrame:
-# columns = 'country', 'FUEL_PRCS', 'lead_time', 'adr', "arrival_date_month", 'stays_in_week_nights', 'INFLATION', 'is_canceled'
 
     df = df.drop(columns=['arrival_date_year', 'arrival_date_week_number', 'arrival_date_day_of_month',
                           'children', 'babies', 'previous_cancellations', 'previous_bookings_not_canceled',
                           'reserved_room_type', 'assigned_room_type', 'booking_changes', 'deposit_type', 'agent',
                           'days_in_waiting_list', 'customer_type', 'required_car_parking_spaces',
                           'total_of_special_requests', 'reservation_status_date', 'MO_YR', 'meal', 'market_segment',
-                          'distribution_channel', 'reservation_status','stays_in_weekend_nights','adults',
-                          'CPI_AVG',  'INFLATION_CHG', 'CSMR_SENT','UNRATE', 'INTRSRT', 'GDP', 'DIS_INC', 'CPI_HOTELS',
-                           'is_repeated_guest','US_GINI','hotel'])
+                          'distribution_channel', 'reservation_status', 'adults',
+                          'CPI_AVG', 'INFLATION_CHG', 'CSMR_SENT', 'UNRATE', 'INTRSRT', 'GDP', 'DIS_INC', 'CPI_HOTELS',
+                          'is_repeated_guest', 'US_GINI', 'hotel'])
 
     # Drop duplicates
     df.drop_duplicates(inplace=True)
 
     # Drop NaN's
     df.dropna(inplace=True)
-    #######ENCODING########################################################################################
-    # Encode country
-    country_mapping = {'ABW': 0, 'AGO': 1, 'AIA': 2, 'ALB': 3, 'AND': 4, 'ARE': 5, 'ARG': 6, 'ARM': 7, 'ASM': 8,\
-        'ATA': 9, 'ATF': 10, 'AUS': 11, 'AUT': 12, 'AZE': 13, 'BDI': 14, 'BEL': 15, 'BEN': 16, 'BFA': 17, 'BGD': 18,\
-        'BGR': 19, 'BHR': 20, 'BHS': 21, 'BIH': 22, 'BLR': 23, 'BOL': 24, 'BRA': 25, 'BRB': 26, 'BWA': 27, 'CAF': 28,\
-        'CHE': 29, 'CHL': 30, 'CHN': 31, 'CIV': 32, 'CMR': 33, 'CN': 34, 'COL': 35, 'COM': 36, 'CPV': 37, 'CRI': 38, \
-        'CUB': 39, 'CYM': 40, 'CYP': 41, 'CZE': 42, 'DEU': 43, 'DJI': 44, 'DMA': 45, 'DNK': 46, 'DOM': 47, 'DZA': 48, \
-        'ECU': 49, 'EGY': 50, 'ESP': 51, 'EST': 52, 'ETH': 53, 'FIN': 54, 'FJI': 55, 'FRA': 56, 'FRO': 57, 'GAB': 58, \
-        'GBR': 59, 'GEO': 60, 'GGY': 61, 'GHA': 62, 'GIB': 63, 'GLP': 64, 'GNB': 65, 'GRC': 66, 'GTM': 67, 'GUY': 68, \
-        'HKG': 69, 'HND': 70, 'HRV': 71, 'HUN': 72, 'IDN': 73, 'IMN': 74, 'IND': 75, 'IRL': 76, 'IRN': 77, 'IRQ': 78, \
-        'ISL': 79, 'ISR': 80, 'ITA': 81, 'JAM': 82, 'JEY': 83, 'JOR': 84, 'JPN': 85, 'KAZ': 86, 'KEN': 87, 'KHM': 88, \
-        'KIR': 89, 'KNA': 90, 'KOR': 91, 'KWT': 92, 'LAO': 93, 'LBN': 94, 'LBY': 95, 'LCA': 96, 'LIE': 97, 'LKA': 98, \
-        'LTU': 99, 'LUX': 100, 'LVA': 101, 'MAC': 102, 'MAR': 103, 'MCO': 104, 'MDG': 105, 'MDV': 106, 'MEX': 107, \
-        'MKD': 108, 'MLI': 109, 'MLT': 110, 'MMR': 111, 'MNE': 112, 'MOZ': 113, 'MRT': 114, 'MUS': 115, 'MWI': 116, \
-        'MYS': 117, 'MYT': 118, 'NAM': 119, 'NCL': 120, 'NGA': 121, 'NIC': 122, 'NLD': 123, 'NOR': 124, 'NPL': 125, \
-        'NZL': 126, 'OMN': 127, 'PAK': 128, 'PAN': 129, 'PER': 130, 'PHL': 131, 'PLW': 132, 'POL': 133, 'PRI': 134, \
-        'PRT': 135, 'PRY': 136, 'PYF': 137, 'QAT': 138, 'ROU': 139, 'RUS': 140, 'RWA': 141, 'SAU': 142, 'SDN': 143, \
-        'SEN': 144, 'SGP': 145, 'SLE': 146, 'SLV': 147, 'SMR': 148, 'SRB': 149, 'STP': 150, 'SUR': 151, 'SVK': 152, \
-        'SVN': 153, 'SWE': 154, 'SYC': 155, 'SYR': 156, 'TGO': 157, 'THA': 158, 'TJK': 159, 'TMP': 160, 'TUN': 161, \
-        'TUR': 162, 'TWN': 163, 'TZA': 164, 'UGA': 165, 'UKR': 166, 'UMI': 167, 'URY': 168, 'USA': 169, 'UZB': 170, \
-        'VEN': 171, 'VGB': 172, 'VNM': 173, 'ZAF': 174, 'ZMB': 175, 'ZWE': 176}
+    ########################################################################################################
+    df['total_stay'] = df['stays_in_weekend_nights'] + df['stays_in_week_nights']
+    df.drop(columns= ['stays_in_weekend_nights','stays_in_week_nights'], inplace=True)
 
-    df["country"] = df["country"].map(country_mapping)
+    ####### FILTERING ######################################################################################
+    # Valid countries list
+    valid_countries = ['PRT', 'GBR', 'ESP', 'FRA', 'DEU']
 
+    # Keep only rows with valid countries
+    df = df[df['country'].isin(valid_countries)]
 
-    # Change months to numbers
+    ####### ENCODING ########################################################################################
+
+    # One Hot Encode 'country'
+    ohe = OneHotEncoder(sparse_output=False, drop='first')
+    country_encoded = ohe.fit_transform(df[['country']])
+    country_encoded_df = pd.DataFrame(country_encoded, columns=ohe.get_feature_names_out(['country']))
+    df = pd.concat([df.reset_index(drop=True), country_encoded_df.reset_index(drop=True)], axis=1)
+    df.drop(columns=['country'], inplace=True)
+
+    # Encode 'arrival_date_month' using sin and cos
     month_mapping = {
         'January': 1, 'February': 2, 'March': 3, 'April': 4,
         'May': 5, 'June': 6, 'July': 7, 'August': 8,
         'September': 9, 'October': 10, 'November': 11, 'December': 12
     }
     df['arrival_date_month'] = df['arrival_date_month'].str.strip().map(month_mapping)
-    #######SCALING########################################################################################
+
+    df = encode_time(df, 'arrival_date_month', 12)
+    df.drop(columns=['arrival_date_month'], inplace=True)
+
+    ####### SCALING ########################################################################################
     # Scaling
-    features_to_robust = ['lead_time', 'arrival_date_month',
-                          'stays_in_week_nights', 'adr', 'FUEL_PRCS']
+    features_to_robust = ['lead_time', 'total_stay', 'adr', 'FUEL_PRCS']
 
     robust_scaler = RobustScaler()
     df[features_to_robust] = robust_scaler.fit_transform(df[features_to_robust])
 
-    features_to_minmax = ['country',  'INFLATION']
+    features_to_minmax = ['INFLATION'] + list(country_encoded_df.columns)
 
     minmax_scaler = MinMaxScaler()
     df[features_to_minmax] = minmax_scaler.fit_transform(df[features_to_minmax])
 
-     # Save the scalers
-    joblib.dump(robust_scaler, 'robust_scaler.pkl')
-    joblib.dump(minmax_scaler, 'minmax_scaler.pkl')
+    # Save the scalers and encoder
+    folder_path = os.path.dirname(__file__)
 
-    X_processed = df
+    # Create the full file paths
+    robust_scaler_path = os.path.join(folder_path, 'robust_scaler_is_canceled.pkl')
+    minmax_scaler_path = os.path.join(folder_path, 'minmax_scaler_is_canceled.pkl')
+    onehot_encoder_path = os.path.join(folder_path, 'onehot_encoder_is_canceled.pkl')
 
-    return X_processed
+    # Save the scalers and encoder
+    joblib.dump(robust_scaler, robust_scaler_path)
+    joblib.dump(minmax_scaler, minmax_scaler_path)
+    joblib.dump(ohe, onehot_encoder_path)
 
+    return df
 
-def  preprocess_is_canceled_X_pred(df: pd.DataFrame) -> pd.DataFrame:
-    #'country', 'FUEL_PRCS', 'lead_time', 'adr', "arrival_date_month", 'stays_in_week_nights', 'INFLATION'
-    # ['lead_time', 'arrival_date_month','stays_in_week_nights', 'adr', 'FUEL_PRCS']
-    # ['country',  'INFLATION']
-    #######ENCODING########################################################################################
+def preprocess_is_canceled_X_pred(df: pd.DataFrame) -> pd.DataFrame:
+    #######################################################################################################
+    # Load the scalers and encoders
+    folder_path = os.path.dirname(__file__)
+    r_scaler_path = os.path.join(folder_path, "robust_scaler_is_canceled.pkl")
+    m_scaler_path = os.path.join(folder_path, "minmax_scaler_is_canceled.pkl")
+    ohe_path = os.path.join(folder_path, "onehot_encoder_is_canceled.pkl")
+
+    robust_scaler = joblib.load(r_scaler_path)
+    minmax_scaler = joblib.load(m_scaler_path)
+    ohe = joblib.load(ohe_path)
+
+    # Valid countries list
+    valid_countries = ['PRT', 'GBR', 'ESP', 'FRA', 'DEU']
+
+    ####### FILTERING ######################################################################################
+    # Keep only rows with valid countries
+    df = df[df['country'].isin(valid_countries)]
+
+    ####### ENCODING ######################################################################################
     # Encode country
-    #ONE HOT ENCODE
-    country_mapping = {'ABW': 0, 'AGO': 1, 'AIA': 2, 'ALB': 3, 'AND': 4, 'ARE': 5, 'ARG': 6, 'ARM': 7, 'ASM': 8,\
-        'ATA': 9, 'ATF': 10, 'AUS': 11, 'AUT': 12, 'AZE': 13, 'BDI': 14, 'BEL': 15, 'BEN': 16, 'BFA': 17, 'BGD': 18,\
-        'BGR': 19, 'BHR': 20, 'BHS': 21, 'BIH': 22, 'BLR': 23, 'BOL': 24, 'BRA': 25, 'BRB': 26, 'BWA': 27, 'CAF': 28,\
-        'CHE': 29, 'CHL': 30, 'CHN': 31, 'CIV': 32, 'CMR': 33, 'CN': 34, 'COL': 35, 'COM': 36, 'CPV': 37, 'CRI': 38, \
-        'CUB': 39, 'CYM': 40, 'CYP': 41, 'CZE': 42, 'DEU': 43, 'DJI': 44, 'DMA': 45, 'DNK': 46, 'DOM': 47, 'DZA': 48, \
-        'ECU': 49, 'EGY': 50, 'ESP': 51, 'EST': 52, 'ETH': 53, 'FIN': 54, 'FJI': 55, 'FRA': 56, 'FRO': 57, 'GAB': 58, \
-        'GBR': 59, 'GEO': 60, 'GGY': 61, 'GHA': 62, 'GIB': 63, 'GLP': 64, 'GNB': 65, 'GRC': 66, 'GTM': 67, 'GUY': 68, \
-        'HKG': 69, 'HND': 70, 'HRV': 71, 'HUN': 72, 'IDN': 73, 'IMN': 74, 'IND': 75, 'IRL': 76, 'IRN': 77, 'IRQ': 78, \
-        'ISL': 79, 'ISR': 80, 'ITA': 81, 'JAM': 82, 'JEY': 83, 'JOR': 84, 'JPN': 85, 'KAZ': 86, 'KEN': 87, 'KHM': 88, \
-        'KIR': 89, 'KNA': 90, 'KOR': 91, 'KWT': 92, 'LAO': 93, 'LBN': 94, 'LBY': 95, 'LCA': 96, 'LIE': 97, 'LKA': 98, \
-        'LTU': 99, 'LUX': 100, 'LVA': 101, 'MAC': 102, 'MAR': 103, 'MCO': 104, 'MDG': 105, 'MDV': 106, 'MEX': 107, \
-        'MKD': 108, 'MLI': 109, 'MLT': 110, 'MMR': 111, 'MNE': 112, 'MOZ': 113, 'MRT': 114, 'MUS': 115, 'MWI': 116, \
-        'MYS': 117, 'MYT': 118, 'NAM': 119, 'NCL': 120, 'NGA': 121, 'NIC': 122, 'NLD': 123, 'NOR': 124, 'NPL': 125, \
-        'NZL': 126, 'OMN': 127, 'PAK': 128, 'PAN': 129, 'PER': 130, 'PHL': 131, 'PLW': 132, 'POL': 133, 'PRI': 134, \
-        'PRT': 135, 'PRY': 136, 'PYF': 137, 'QAT': 138, 'ROU': 139, 'RUS': 140, 'RWA': 141, 'SAU': 142, 'SDN': 143, \
-        'SEN': 144, 'SGP': 145, 'SLE': 146, 'SLV': 147, 'SMR': 148, 'SRB': 149, 'STP': 150, 'SUR': 151, 'SVK': 152, \
-        'SVN': 153, 'SWE': 154, 'SYC': 155, 'SYR': 156, 'TGO': 157, 'THA': 158, 'TJK': 159, 'TMP': 160, 'TUN': 161, \
-        'TUR': 162, 'TWN': 163, 'TZA': 164, 'UGA': 165, 'UKR': 166, 'UMI': 167, 'URY': 168, 'USA': 169, 'UZB': 170, \
-        'VEN': 171, 'VGB': 172, 'VNM': 173, 'ZAF': 174, 'ZMB': 175, 'ZWE': 176}
-
-    df["country"] = df["country"].map(country_mapping)
-
+    country_encoded = ohe.transform(df[['country']])
+    country_encoded_df = pd.DataFrame(country_encoded, columns=ohe.get_feature_names_out(['country']))
+    df = pd.concat([df.reset_index(drop=True), country_encoded_df.reset_index(drop=True)], axis=1)
+    df.drop(columns=['country'], inplace=True)
 
     # Change months to numbers
     month_mapping = {
@@ -177,49 +181,187 @@ def  preprocess_is_canceled_X_pred(df: pd.DataFrame) -> pd.DataFrame:
         'September': 9, 'October': 10, 'November': 11, 'December': 12
     }
     df['arrival_date_month'] = df['arrival_date_month'].str.strip().map(month_mapping)
-    #######SCALING########################################################################################
-    # Load the scalers
+
+    # Encode month using sin and cos
+    df = encode_time(df, 'arrival_date_month', 12)
+    df.drop(columns=['arrival_date_month'], inplace=True)
+
+    ####### SCALING ######################################################################################
+    # Scaling
+    features_to_robust = ['lead_time', 'total_stay', 'adr', 'FUEL_PRCS']
+    df[features_to_robust] = robust_scaler.transform(df[features_to_robust])
+
+    # Ensure the order of features matches what was used during fitting
+    features_to_minmax = ['INFLATION'] + list(ohe.get_feature_names_out(['country']))
+    df[features_to_minmax] = minmax_scaler.transform(df[features_to_minmax])
+
+    return df
+
+def preprocess_is_country(df: pd.DataFrame) -> pd.DataFrame:
+    #######################DROP NaN'S########################################################################
+    #Drop columns
+    df = df.drop(columns=['arrival_date_year', 'arrival_date_week_number', 'arrival_date_day_of_month',
+                          'children', 'babies', 'previous_cancellations', 'previous_bookings_not_canceled',
+                          'reserved_room_type', 'assigned_room_type', 'booking_changes', 'deposit_type',
+                          'agent', 'days_in_waiting_list', 'customer_type', 'required_car_parking_spaces',
+                          'total_of_special_requests', 'reservation_status_date', 'MO_YR'])
+    #Drop duplicates
+    df.drop_duplicates(inplace=True)
+    #Drop none
+    df.dropna(inplace=True)
+
+    df = df[df["meal"] != "Undefined"]
+    df = df[df["market_segment"] != "Undefined"]
+    df = df[df["distribution_channel"] != "Undefined"]
+
+    valid_countries = ['PRT', 'GBR', 'ESP', 'FRA', 'DEU']
+
+    # Step 3: Filter the DataFrame to only include these valid countries
+    df = df[df['country'].isin(valid_countries)]
+    #####################TOTAL STAY##########################################################################
+    df['total_stay'] = df['stays_in_weekend_nights'] + df['stays_in_week_nights']
+    df.drop(columns= ['stays_in_weekend_nights','stays_in_week_nights'], inplace=True)
+
+    ####### ENCODING ########################################################################################
+    le = LabelEncoder()
+    df['country'] = le.fit_transform(df['country'])
+    #--------------------------------------------------------------------------------------------------------
+    # Encode 'arrival_date_month' using sin and cos
+    month_mapping = {
+        'January': 1, 'February': 2, 'March': 3, 'April': 4,
+        'May': 5, 'June': 6, 'July': 7, 'August': 8,
+        'September': 9, 'October': 10, 'November': 11, 'December': 12
+    }
+    df['arrival_date_month'] = df['arrival_date_month'].str.strip().map(month_mapping)
+
+    df = encode_time(df, 'arrival_date_month', 12)
+    df.drop(columns=['arrival_date_month'], inplace=True)
+    #--------------------------------------------------------------------------------------------------------
+    #Change hotel to binary
+    hotel_mapping = {
+        'City Hotel': 1,
+        'Resort Hotel': 0
+    }
+    #Strip spaces
+    df['hotel'] = df['hotel'].str.strip()
+    # Replace month names with numbers
+    df['hotel'] = df['hotel'].map(hotel_mapping)
+    #--------------------------------------------------------------------------------------------------------
+    # Columns to one-hot encode
+    # can add 'country' here to use it as a predictor
+    columns_to_encode = ['meal', 'market_segment', 'distribution_channel', 'reservation_status']
+
+    # Instantiate the OneHotEncoder
+    ohe = OneHotEncoder(sparse_output=False, drop='first')  # drop='first' avoids the dummy variable trap
+
+    # Fit and transform the data
+    one_hot_encoded_data = ohe.fit_transform(df[columns_to_encode])
+
+    # Convert encoded data to DataFrame
+    one_hot_df = pd.DataFrame(one_hot_encoded_data, columns=ohe.get_feature_names_out(columns_to_encode))
+
+    # Concatenate the encoded columns with the original DataFrame
+    df = pd.concat([df.reset_index(drop=True), one_hot_df.reset_index(drop=True)], axis=1)
+
+    # Drop the original columns that were encoded
+    df.drop(columns=columns_to_encode, inplace=True)
+    ####### SCALING ########################################################################################
+    # Scaling
+    features_to_robust = ['lead_time', 'arrival_date_month_sin','arrival_date_month_cos',
+                          'total_stay', 'adults', 'adr', 'FUEL_PRCS']
+
+    robust_scaler = RobustScaler()
+    df[features_to_robust] = robust_scaler.fit_transform(df[features_to_robust])
+
+    features_to_minmax = ['CPI_AVG', 'INFLATION', 'INFLATION_CHG', 'CSMR_SENT', 'UNRATE', 'INTRSRT',
+                          'GDP', 'DIS_INC', 'CPI_HOTELS']
+
+    minmax_scaler = MinMaxScaler()
+    df[features_to_minmax] = minmax_scaler.fit_transform(df[features_to_minmax])
+
+    # Save the scalers and encoder
     folder_path = os.path.dirname(__file__)
-    r_scaler_path = os.path.join(folder_path,"..", "robust_scaler.pkl")
-    m_scaler_path = os.path.join(folder_path,"..", "minmax_scaler.pkl")
+
+    # Create the full file paths
+    robust_scaler_path = os.path.join(folder_path, 'robust_scaler_is_country.pkl')
+    minmax_scaler_path = os.path.join(folder_path, 'minmax_scaler_is_country.pkl')
+    onehot_encoder_path = os.path.join(folder_path, 'onehot_encoder_is_country.pkl')
+    label_encoder_path = os.path.join(folder_path, 'label_encoder_is_country.pkl')
+
+
+    # Save the scalers and encoder
+    joblib.dump(robust_scaler, robust_scaler_path)
+    joblib.dump(minmax_scaler, minmax_scaler_path)
+    joblib.dump(ohe, onehot_encoder_path)
+    joblib.dump(le, label_encoder_path)
+
+    return df
+
+def preprocess_is_country_X_pred(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    predictors = ['arrival_date_month','adr', 'lead_time', 'total_stay',
+              'adults', 'hotel', 'INFLATION']
+    """
+    # Load the scalers and encoders
+    folder_path = os.path.dirname(__file__)
+    r_scaler_path = os.path.join(folder_path, "robust_scaler_is_country.pkl")
+    m_scaler_path = os.path.join(folder_path, "minmax_scaler_is_country.pkl")
 
 
     robust_scaler = joblib.load(r_scaler_path)
     minmax_scaler = joblib.load(m_scaler_path)
 
+    ####### ENCODING ########################################################################################
+    # Encode 'arrival_date_month' using sin and cos
+    month_mapping = {
+        'January': 1, 'February': 2, 'March': 3, 'April': 4,
+        'May': 5, 'June': 6, 'July': 7, 'August': 8,
+        'September': 9, 'October': 10, 'November': 11, 'December': 12
+    }
+    df['arrival_date_month'] = df['arrival_date_month'].str.strip().map(month_mapping)
+
+    df = encode_time(df, 'arrival_date_month', 12)
+    df.drop(columns=['arrival_date_month'], inplace=True)
+    #--------------------------------------------------------------------------------------------------------
+    #Change hotel to binary
+    hotel_mapping = {
+        'City Hotel': 1,
+        'Resort Hotel': 0
+    }
+    #Strip spaces
+    df['hotel'] = df['hotel'].str.strip()
+    # Replace month names with numbers
+    df['hotel'] = df['hotel'].map(hotel_mapping)
+    ####### SCALING ########################################################################################
     # Scaling
-    features_to_robust = ['lead_time', 'arrival_date_month',
-                          'stays_in_week_nights', 'adr', 'FUEL_PRCS']
+    features_to_robust = ['lead_time', 'arrival_date_month_sin','arrival_date_month_cos',
+                          'total_stay', 'adults', 'adr']
 
-    df[features_to_robust] = robust_scaler.transform(df[features_to_robust])
+    robust_scaler = RobustScaler()
+    df[features_to_robust] = robust_scaler.fit_transform(df[features_to_robust])
 
-    features_to_minmax = ['country',  'INFLATION']
+    features_to_minmax = ['INFLATION']
 
-    df[features_to_minmax] = minmax_scaler.transform(df[features_to_minmax])
+    minmax_scaler = MinMaxScaler()
+    df[features_to_minmax] = minmax_scaler.fit_transform(df[features_to_minmax])
 
-    X_processed = df
-
-    return X_processed
-
-"""
-Index(['lead_time', 'arrival_date_month', 'stays_in_week_nights', 'country',
-       'adr', 'INFLATION', 'FUEL_PRCS'],
-      dtype='object')
-"""
+    return df
 
 
-# data_frame = pd.DataFrame(
-#         {
-#     'lead_time': 342,
-#     'arrival_date_month': 'July',
-#     'stays_in_week_nights': 0,
-#     'country': 'PRT',
-#     'adr': 0,
-#     'INFLATION': 1.8,
-#     'FUEL_PRCS': 194
-#         }, index=[0])
-# name = preprocess_is_canceled_X_pred(
-#     data_frame)
+# # Example data frame
+# data_frame = pd.DataFrame({
+#     'lead_time': [342],
+#     'arrival_date_month': ['July'],
+#     'total_stay': [0],
+#     'country': ['PRT'],
+#     'adr': [0],
+#     'INFLATION': [1.8],
+#     'FUEL_PRCS': [194]
+# })
+
+# name = preprocess_is_canceled_X_pred(data_frame)
+# print(name.columns)
+
 # model = load_model()
 # print(model.predict(name))
 # print(name)
