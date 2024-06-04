@@ -3,12 +3,12 @@ import time
 import pickle
 from demand_predictor.params import LOCAL_REGISTRY_PATH  # Adjust your import accordingly
 
-def save_model(model) -> None:
+def save_model(model, model_type: str) -> None:
     """
-    Persist trained model locally on the hard drive at f"{LOCAL_REGISTRY_PATH}/models/{timestamp}.pkl"
+    Persist trained model locally on the hard drive at f"{LOCAL_REGISTRY_PATH}/models/{model_type}/{timestamp}.pkl"
     """
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    model_dir = os.path.join(LOCAL_REGISTRY_PATH, "models")
+    model_dir = os.path.join(LOCAL_REGISTRY_PATH, "models", model_type)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     model_path = os.path.join(model_dir, f"{timestamp}.pkl")
@@ -16,11 +16,11 @@ def save_model(model) -> None:
         pickle.dump(model, file)
     print(f"✅ Model saved locally at {model_path}")
 
-def load_model():
+def load_model(model_type: str):
     """
-    Return the most recently saved model from the local directory.
+    Return the most recently saved model from the local directory f"{LOCAL_REGISTRY_PATH}/models/{model_type}/".
     """
-    model_dir = os.path.join(LOCAL_REGISTRY_PATH, "models")
+    model_dir = os.path.join(LOCAL_REGISTRY_PATH, "models", model_type)
     if not os.path.exists(model_dir):
         print("❌ No model directory found.")
         return None
@@ -38,17 +38,17 @@ def load_model():
     print(f"✅ Model loaded from {latest_model_path}")
     return model
 
-def save_results(params: dict, metrics: dict) -> None:
+def save_results(params: dict, metrics: dict, model_type: str) -> None:
     """
     Persist params & metrics locally on the hard drive at
-    "{LOCAL_REGISTRY_PATH}/params/{current_timestamp}.pickle"
-    "{LOCAL_REGISTRY_PATH}/metrics/{current_timestamp}.pickle"
+    "{LOCAL_REGISTRY_PATH}/params/{model_type}/{current_timestamp}.pickle"
+    "{LOCAL_REGISTRY_PATH}/metrics/{model_type}/{current_timestamp}.pickle"
     """
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
     # Save params locally
     if params is not None:
-        params_dir = os.path.join(LOCAL_REGISTRY_PATH, "params")
+        params_dir = os.path.join(LOCAL_REGISTRY_PATH, "params", model_type)
         if not os.path.exists(params_dir):
             os.makedirs(params_dir)
         params_path = os.path.join(params_dir, timestamp + ".pickle")
@@ -57,7 +57,7 @@ def save_results(params: dict, metrics: dict) -> None:
 
     # Save metrics locally
     if metrics is not None:
-        metrics_dir = os.path.join(LOCAL_REGISTRY_PATH, "metrics")
+        metrics_dir = os.path.join(LOCAL_REGISTRY_PATH, "metrics", model_type)
         if not os.path.exists(metrics_dir):
             os.makedirs(metrics_dir)
         metrics_path = os.path.join(metrics_dir, timestamp + ".pickle")

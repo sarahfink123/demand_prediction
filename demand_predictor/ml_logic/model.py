@@ -14,7 +14,7 @@ def initialize_model():
     return model
 
 
-def train_model(
+def train_predict_model(
         model,
         X,
         y
@@ -24,9 +24,11 @@ def train_model(
     """
     print(Fore.BLUE + "\nTraining model..." + Style.RESET_ALL)
 
-    print(f"✅ Model trained on {len(X)} rows with min val MAE: {round(np.min(history.history['val_mae']), 2)}")
+    model.fit(X, y)
 
-    return model, history
+    print(f"✅ Model trained on {len(X)} rows.")
+
+    return model
 
 
 def evaluate_model(
